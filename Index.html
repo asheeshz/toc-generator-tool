@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Table of Contents (TOC) Generator & Customizer</title>
+    <meta name="description" content="Create beautiful, customizable Table of Contents (TOC) for Blogger, WordPress & any website. Customize selectors, styles, colors, icons & generate ready-to-use CSS & JS code.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* --- बेस UI स्टाइल (TOC थीम) --- */
+        :root {
+          --ui-color-1: #004d40; --ui-color-2: #00796b; --ui-color-3: #4db6ac; --ui-color-4: #ffab40; --ui-color-5: #e65100;
+          --ui-text-light: #e0f2f1; --ui-text-dark: #004d40; --ui-border-light: rgba(255, 255, 255, 0.4); --ui-border-dark: rgba(0, 0, 0, 0.1);
+          --scrollbar-thumb-color: rgba(255, 255, 255, 0.4); --scrollbar-thumb-hover-color: rgba(255, 255, 255, 0.6); --scrollbar-track-color: rgba(0, 0, 0, 0.15);
+          --grad-controls: linear-gradient(135deg, var(--ui-color-1) 0%, var(--ui-color-2) 100%);
+          --grad-codebox-css: linear-gradient(60deg, var(--ui-color-2) 0%, var(--ui-color-3) 100%);
+          --grad-codebox-js: linear-gradient(60deg, var(--ui-color-4) 0%, var(--ui-color-5) 100%);
+          --grad-preview: linear-gradient(-45deg, #e0f7fa 0%, #b2ebf2 100%);
+          --customizer-font-primary: 'Poppins', sans-serif; --customizer-font-code: 'Roboto Mono', monospace;
+        }
+        body { font-family: var(--customizer-font-primary); background-color: #f1f8e9; line-height: 1.6; color: #333; margin: 0; padding: 15px; }
+        .customizer-wrapper { padding: 0; max-width: 100%; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 1.5em; }
+        @media (min-width: 1000px) { .customizer-wrapper { grid-template-columns: minmax(450px, 550px) 1fr; } .controls-and-code { grid-column: 1 / 2; } .preview-column { grid-column: 2 / 3; overflow: hidden; } }
+        .section-container { margin-bottom: 1.5em; border-radius: 10px; padding: 20px 25px; color: var(--ui-text-light); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); overflow: hidden; position: relative; transition: box-shadow 0.3s ease-out, border-color 0.3s ease-out; }
+        .section-title { font-size: 1.3em; font-weight: 700; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid var(--ui-border-light); display: flex; align-items: center; gap: 10px; }
+        .section-title i { font-size: 0.9em; opacity: 0.8; }
+        .thin-scrollbar { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color); }
+        .thin-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .thin-scrollbar::-webkit-scrollbar-track { background: var(--scrollbar-track-color); border-radius: 4px; }
+        .thin-scrollbar::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb-color); border-radius: 4px; border: 2px solid var(--scrollbar-track-color); }
+        .thin-scrollbar:hover::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb-hover-color); }
+        .master-controls-container { background: var(--grad-controls); border: 2px solid var(--ui-color-1); }
+        .master-controls { padding: 0; background-color: transparent; border: none; border-radius: 0; margin-bottom: 0; display: flex; flex-direction: column; }
+        .master-controls h3 { font-size: 1.3em; font-weight: 700; margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 1px solid var(--ui-border-light); color: var(--ui-text-light); text-align: left; display: flex; align-items: center; gap: 10px; }
+        .master-controls h3 i { font-size: 0.9em; opacity: 0.8;}
+        .slider-container { position: relative; overflow: hidden; overflow-y: auto; overflow-x: auto; width: 100%; max-height: 420px; min-height: 320px; margin-bottom: 15px; padding: 10px 5px; background-color: rgba(255, 255, 255, 0.08); border: none; border-radius: 6px; composes: thin-scrollbar; scrollbar-color: var(--ui-color-3) rgba(0, 0, 0, 0.2); }
+        .slider-container::-webkit-scrollbar-thumb { background-color: var(--ui-color-3); }
+        .slider-container:hover::-webkit-scrollbar-thumb { background-color: var(--ui-color-2); }
+        .control-group.slider-slide { width: 100%; padding: 15px; margin: 0; border-bottom: none; display: none; flex-wrap: wrap; gap: 10px 15px; opacity: 0; transition: opacity 0.4s ease-in-out; position: absolute; top: 0; left: 0; visibility: hidden; background-color: transparent; }
+        .control-group.slider-slide.active-slide { display: flex; opacity: 1; position: relative; visibility: visible; animation: fadeInUp 0.5s ease-out; }
+        .control-group-title { font-weight: 600; font-size: 1em; font-family: var(--customizer-font-primary); color: var(--ui-text-light); margin-bottom: 15px; display: block; width: 100%; flex-basis: 100%; text-align: center; border-bottom: 1px dashed var(--ui-border-light); padding-bottom: 8px; opacity: 0.9; }
+        .control-item { display: flex; align-items: center; gap: 8px; flex-basis: 100%; flex-grow: 1; min-width: 240px; background-color: rgba(0, 0, 0, 0.15); padding: 8px 12px; border-radius: 4px; transition: background-color 0.2s ease; }
+        @media (min-width: 550px) { .control-item { flex-basis: calc(50% - 15px); } }
+        .control-item:hover { background-color: rgba(0, 0, 0, 0.25); }
+        .control-item.full-width { flex-basis: 100%; max-width: none; }
+        .control-item label { font-family: var(--customizer-font-primary); font-size: 0.8em; color: var(--ui-text-light); opacity: 0.9; margin-right: 5px; min-width: 120px; text-align: right; flex-shrink: 0; font-weight: 400; }
+        .control-item input[type="color"] { height: 26px; width: 35px; padding: 1px; border: 1px solid var(--ui-border-light); cursor: pointer; flex-shrink: 0; border-radius: 4px; transition: transform 0.2s ease; }
+        .control-item input[type="color"]:hover { transform: scale(1.1); }
+        .control-item input[type="number"], .control-item input[type="text"], .control-item select, .control-item textarea { padding: 5px 8px; border: 1px solid var(--ui-border-light); border-radius: 4px; font-size: 0.85em; background-color: rgba(255, 255, 255, 0.1); color: var(--ui-text-light); transition: border-color 0.2s ease, background-color 0.2s ease; font-family: var(--customizer-font-primary); }
+        .control-item input[type="number"]:focus, .control-item input[type="text"]:focus, .control-item select:focus, .control-item textarea:focus { background-color: rgba(255, 255, 255, 0.2); border-color: var(--ui-color-3); outline: none; }
+        .control-item input[type="number"] { width: 60px; flex-shrink: 0; text-align: center;}
+        .control-item input[type="text"], .control-item select, .control-item textarea { flex-grow: 1; min-width: 150px; max-width: none; }
+        .control-item textarea { min-height: 60px; resize: vertical; }
+        .control-item select option { background-color: #333; color: white;}
+        .control-item .unit-label { font-size: 0.75em; color: var(--ui-text-light); opacity: 0.7; margin-left: -2px; }
+        .control-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--ui-color-3);}
+        .slider-navigation { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 450px; margin: 15px auto 0 auto; padding: 10px; border-top: 1px solid var(--ui-border-light); }
+        .slider-buttons-row { display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px; }
+        #current-slide-info { font-family: var(--customizer-font-primary); font-size: 0.9em; color: var(--ui-text-light); font-weight: 600; text-align: center; padding: 5px 8px; background-color: rgba(0, 0, 0, 0.2); border-radius: 4px; opacity: 0.9; transition: background-color 0.3s ease; }
+        #current-slide-info:hover { background-color: rgba(0, 0, 0, 0.3); }
+        .slider-navigation button { padding: 7px 20px; min-width: 100px; font-size: 0.85em; font-family: var(--customizer-font-primary); font-weight: 600; color: var(--ui-text-light); background-color: var(--ui-color-3); border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.15); text-transform: uppercase; letter-spacing: 0.5px; }
+        .slider-navigation button:hover:not(:disabled) { background-color: var(--ui-color-2); transform: translateY(-2px); box-shadow: 0 3px 6px rgba(0,0,0,0.2); }
+        .slider-navigation button:disabled { background-color: #90a4ae; cursor: not-allowed; opacity: 0.6; transform: none; box-shadow: none; }
+        .code-box-wrapper-container-css { background: var(--grad-codebox-css); border: 2px solid var(--ui-color-2); margin-top: 1.5em; transition: box-shadow 0.3s ease-out, border-color 0.3s ease-out; }
+        .code-box-wrapper-container-js { background: var(--grad-codebox-js); border: 2px solid var(--ui-color-5); margin-top: 1.5em; transition: box-shadow 0.3s ease-out, border-color 0.3s ease-out; }
+        .code-box-wrapper { margin-bottom: 0; }
+        .code-box-container { border: none; border-radius: 0; background-color: transparent; position: relative; color: var(--ui-text-light); }
+        .code-box-header { display: flex; align-items: center; padding: 0 0 10px 0; background-color: transparent; border-bottom: 1px solid var(--ui-border-light); margin-bottom: 8px; }
+        .code-box-title { font-size: 1.3em; font-weight: 700; color: var(--ui-text-light); font-family: var(--customizer-font-primary); display: flex; align-items: center; gap: 8px; margin: 0; }
+        .code-box-title i { font-size: 0.9em; opacity: 0.8;}
+        .copy-code-button { margin-bottom: 12px; display: inline-flex; align-items: center; justify-content: center; padding: 7px 15px; min-width: 90px; white-space: nowrap; font-size: 0.85em; font-family: var(--customizer-font-primary); color: var(--ui-text-dark); background-color: #ffffff; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s ease, transform 0.2s ease, color 0.3s ease; font-weight: 600; gap: 6px; }
+        .code-box-wrapper-container-css .copy-code-button { background-color: var(--ui-color-1); color: white;}
+        .code-box-wrapper-container-js .copy-code-button { background-color: var(--ui-color-4); color: var(--ui-text-dark);}
+        .copy-code-button i { font-size: 1em;}
+        .code-box-wrapper-container-css .copy-code-button:hover { background-color: var(--ui-color-3); color: var(--ui-text-dark); transform: scale(1.05); }
+        .code-box-wrapper-container-js .copy-code-button:hover { background-color: var(--ui-color-5); color: white; transform: scale(1.05); }
+        .copy-code-button:active { transform: scale(1); }
+        .copy-code-button:disabled { background-color: #ccc; color: #666; transform: none; cursor: default; }
+        .code-display-textarea { width: 100%; display: block; height: 280px; border: none; background-color: rgba(0, 0, 0, 0.5); padding: 12px; border-radius: 6px; font-family: var(--customizer-font-code); font-size: 11.5px; line-height: 1.5; box-sizing: border-box; white-space: pre; overflow: auto; resize: vertical; direction: ltr; text-align: left; color: #b2dfdb; cursor: default; composes: thin-scrollbar; scrollbar-color: var(--ui-color-3) rgba(0, 0, 0, 0.5); transition: background-color 0.5s ease-out; }
+        #jsCodeArea { color: #ffcc80; scrollbar-color: var(--ui-color-4) rgba(0,0,0,0.5); }
+        .code-display-textarea::-webkit-scrollbar { width: 8px; height: 8px; background-color: rgba(0, 0, 0, 0.3); }
+        .code-display-textarea::-webkit-scrollbar-thumb { background-color: rgba(77, 182, 172, 0.5); border-radius: 4px; border: none; }
+        #jsCodeArea::-webkit-scrollbar-thumb { background-color: rgba(255, 171, 64, 0.5); }
+        .code-display-textarea:hover::-webkit-scrollbar-thumb { background-color: rgba(77, 182, 172, 0.8); }
+        #jsCodeArea:hover::-webkit-scrollbar-thumb { background-color: rgba(255, 171, 64, 0.8); }
+        .code-display-textarea::-webkit-scrollbar-corner { background-color: rgba(0, 0, 0, 0.3); }
+        .widget-preview-wrapper-container { background: var(--grad-preview); border: 2px solid var(--ui-color-3); }
+        .widget-preview-wrapper { margin-top: 0; padding: 0; border: none; border-radius: 0; background: transparent; box-shadow: none; color: var(--ui-text-dark); }
+        .widget-preview-title { font-family: var(--customizer-font-primary); font-size: 1.3em; color: var(--ui-text-dark); margin: 0 0 15px 0; font-weight: 700; text-align: left; width: 100%; border-bottom: 1px solid rgba(0, 0, 0, 0.2); padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+         .widget-preview-title i { font-size: 0.9em; opacity: 0.8; color: var(--ui-color-2);}
+        .widget-preview-container { border: 1px solid #b2dfdb; border-radius: 6px; padding: 20px; background-color: #ffffff; position: relative; overflow: auto; display: block; min-height: 500px; height: calc(100vh - 70px); composes: thin-scrollbar; scrollbar-color: var(--ui-color-3) #e0f2f1; }
+        .widget-preview-container::-webkit-scrollbar-thumb { background-color: var(--ui-color-3); }
+        .widget-preview-container:hover::-webkit-scrollbar-thumb { background-color: var(--ui-color-2); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- TOC प्रीव्यू के लिए स्टाइल --- */
+        #toc-preview-content { font-family: 'Georgia', serif; color: #333; line-height: 1.7; padding: 5px;}
+        #toc-preview-content h2, #toc-preview-content h3 { font-family: 'Poppins', sans-serif; margin: 25px 0 10px 0; color: #004d40; padding-bottom: 5px; border-bottom: 1px solid #a5d6a7; }
+        #toc-preview-content h2 { font-size: 1.6em; border-bottom-width: 2px; }
+        #toc-preview-content h3 { font-size: 1.3em; }
+        #toc-preview-content p { margin-bottom: 15px; text-align: left; font-size: 0.95em;}
+        #toc-container-preview { margin: 20px 0 25px 0; clear: both; position: relative; }
+        #toc-toggle-button-preview { display: block; width: 100%; text-align: center; cursor: pointer; border: 1px solid; border-radius: var(--button-radius); text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.3s ease; font-size: var(--button-font-size); padding: var(--button-padding-v) var(--button-padding-h); font-weight: var(--button-font-weight); /* नया */ color: var(--button-text-color); background: linear-gradient(140deg, var(--button-bg-start), var(--button-bg-end)); border-color: var(--button-border); letter-spacing: var(--button-letter-spacing); /* नया */ }
+        #toc-toggle-button-preview i { margin-left: 8px; font-size: var(--button-icon-size); /* नया */ }
+        #toc-preview { max-height: 400px; overflow: hidden; margin: 0; border: 2px solid; border-top: none; border-radius: 0 0 var(--toc-box-radius) var(--toc-box-radius); background: linear-gradient(135deg, var(--toc-bg-start), var(--toc-bg-end)); box-shadow: 0 4px 12px var(--toc-shadow); padding: 0 var(--toc-padding-horizontal); /* नया */ transition: max-height 0.6s ease-out, opacity 0.4s ease-out, padding 0.6s ease-out; opacity: 0; border-color: var(--toc-border); border-style: var(--toc-border-style); /* नया */ }
+        #toc-preview.visible { max-height: 500px; opacity: 1; padding: var(--toc-padding-top) var(--toc-padding-horizontal) var(--toc-padding-bottom); /* नया */ overflow-y: auto; }
+        #toc-container-preview.toc-is-shown #toc-toggle-button-preview { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        #toc-preview h2.toc-title-preview { font-size: 1.25em !important; margin: 0 0 15px 0 !important; padding-bottom: 10px !important; border-bottom-width: 2px !important; border-bottom-style: var(--toc-title-border-style) !important; /* नया */ color: var(--toc-title-color) !important; font-weight: var(--toc-title-weight) !important; /* नया */ text-align: center; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); text-transform: var(--toc-title-transform); /* नया */ letter-spacing: var(--toc-title-spacing); /* नया */ border-bottom-color: var(--toc-title-border) !important; }
+        #toc-preview ul { list-style-type: none; padding-left: 0; margin: 0; column-count: var(--toc-column-count); column-gap: var(--toc-column-gap); column-rule: 1px dotted var(--toc-column-rule); background: none; border-radius: 5px; padding: 10px 0px; }
+        @media (max-width: 600px) { #toc-preview ul { column-count: 1 !important; column-rule: none !important; }}
+        #toc-preview li { margin-bottom: 0; line-height: var(--toc-list-line-height); /* नया */ break-inside: avoid; position: relative; }
+        #toc-preview li + li { margin-top: var(--toc-item-margin-bottom); /* नया */ }
+        #toc-preview li.toc-level-3-preview { margin-left: var(--toc-h3-indent); padding-left: var(--toc-h3-padding); border-left: 3px solid var(--toc-h3-indicator); background-color: var(--toc-h3-bg); border-radius: 4px; transition: background-color 0.2s ease, border-left-color 0.2s ease; font-size: var(--toc-h3-font-size); /* नया */ }
+        #toc-preview li.toc-level-3-preview:hover { background-color: var(--toc-h3-hover-bg); border-left-color: var(--toc-h3-hover-indicator, var(--toc-h3-indicator)); }
+        #toc-preview li.toc-level-4-preview { margin-left: var(--toc-h4-indent); padding-left: var(--toc-h4-padding); border-left: 3px solid var(--toc-h4-indicator); font-style: italic; font-size: var(--toc-h4-font-size); /* नया */ }
+        #toc-preview a { text-decoration: none; color: var(--toc-link-color); transition: color 0.2s ease, background-color 0.2s ease; display: flex; align-items: center; padding: 6px 10px; border-radius: 4px; font-weight: var(--toc-link-weight); /* नया */ text-transform: var(--toc-link-transform); /* नया */ cursor: default; }
+        #toc-preview a:hover { color: var(--toc-list-hover-text) !important; background-color: var(--toc-list-hover-bg); }
+        #toc-preview a i { margin-right: 10px; font-size: var(--toc-icon-size); /* नया */ width: 1.2em; text-align: center; transition: transform 0.3s ease; flex-shrink: 0; }
+        #toc-preview a:hover i { transform: scale(1.1); }
+        #toc-preview li.toc-level-2-preview a i { color: var(--ui-color-2); }
+        #toc-preview li.toc-level-3-preview a i { color: var(--ui-color-3); }
+        #toc-preview li.toc-level-4-preview a i { color: var(--ui-color-4); }
+        /* Highlight Preview */
+        #toc-preview-content h2.highlight-target-preview, #toc-preview-content h3.highlight-target-preview { background-color: var(--highlight-bg) !important; box-shadow: 0 0 0 2px var(--highlight-border) !important; border-radius: 5px !important; padding: 4px 8px !important; margin: -4px -8px !important; color: var(--highlight-text-color) !important; display: inline-block !important; width: auto !important; border-bottom: none !important; }
+        #toc-preview-content p.highlight-content-preview, #toc-preview-content div.highlight-content-preview { background-color: var(--content-highlight-bg) !important; border-radius: 5px !important; padding: 12px 18px !important; margin-top: 8px !important; margin-bottom: 8px !important; box-shadow: 0 2px 8px rgba(218, 165, 32, 0.15) !important; display: block !important; border: 1px solid var(--content-highlight-border); /* नया */ }
+
+        /* --- टेक्स्टएरिया फ्लैश स्टाइल --- */
+        .code-display-textarea.textarea-flash { background-color: rgba(77, 182, 172, 0.3) !important; transition: background-color 0.1s ease-in-out !important; }
+        #jsCodeArea.textarea-flash { background-color: rgba(255, 171, 64, 0.3) !important; }
+        .code-display-textarea { background-color: rgba(0, 0, 0, 0.5); transition: background-color 0.5s ease-out; }
+
+    </style>
+</head>
+<body>
+    <div class="customizer-wrapper">
+        <div class="controls-and-code">
+            <!-- कंट्रोल पैनल -->
+            <div class="section-container master-controls-container">
+                <div class="master-controls">
+                    <h3><i class="fas fa-cogs"></i>TOC Customizer</h3>
+                    <div class="slider-container thin-scrollbar">
+                        <!-- Slide 1: Basic Configuration -->
+                        <div class="control-group slider-slide active-slide">
+                           <span class="control-group-title">Basic Configuration</span>
+                            <div class="control-item full-width">
+                                <label for="select-postContainerSelector">Post Container:</label>
+                                <select id="select-postContainerSelector" data-config-key="postContainerSelector">
+                                    <optgroup label="Blogger Common">
+                                        <option value=".post-body" selected>Default: .post-body</option>
+                                        <option value=".post-body.entry-content">Theme V2/Contempo: .post-body.entry-content</option>
+                                        <option value=".post hentry">Older Themes: .post.hentry</option>
+                                        <option value="article .post-body">Some Custom Themes: article .post-body</option>
+                                        <option value="#post-body">Rarely: #post-body (ID)</option>
+                                    </optgroup>
+                                    <optgroup label="WordPress Common">
+                                        <option value=".entry-content">Default: .entry-content</option>
+                                        <option value=".post-content">Some Themes: .post-content</option>
+                                        <option value=".content-area">Theme Frameworks: .content-area</option>
+                                        <option value="article .entry-content">Specific Themes: article .entry-content</option>
+                                        <option value="main .entry-content">HTML5 Themes: main .entry-content</option>
+                                    </optgroup>
+                                     <optgroup label="Other CMS/Frameworks">
+                                        <option value=".td-post-content">Newspaper/TagDiv: .td-post-content</option>
+                                        <option value="article.post">GeneratePress: article.post</option>
+                                        <option value=".single-content">Astra: .single-content</option>
+                                        <option value=".page-content">Common: .page-content</option>
+                                        <option value=".main-content">Common: .main-content</option>
+                                     </optgroup>
+                                     <optgroup label="HTML5 & Schema">
+                                        <option value="article">HTML5: article</option>
+                                        <option value="main">HTML5: main</option>
+                                        <option value="[itemprop=articleBody]">Schema: [itemprop=articleBody]</option>
+                                     </optgroup>
+                                    <option value="custom">Custom Selector...</option>
+                                </select>
+                            </div>
+                             <div class="control-item full-width" id="custom-selector-wrapper" style="display: none;"> <label for="input-customSelector">Custom Selector:</label> <input type="text" id="input-customSelector" placeholder=".your-class or #your-id"> </div>
+                             <div class="control-item full-width"> <label for="input-headingsSelector">Headings:</label> <input type="text" id="input-headingsSelector" data-config-key="headingsSelector" value="h2, h3"> </div>
+                            <div class="control-item"> <label for="input-minHeadingsForToc">Min Headings:</label> <input type="number" id="input-minHeadingsForToc" data-config-key="minHeadingsForToc" value="2" min="1" max="10" step="1"> </div>
+                            <div class="control-item"> <label for="input-tocTitleText">TOC Title:</label> <input type="text" id="input-tocTitleText" data-config-key="tocTitleText" value="Table of Contents"> </div>
+                            <div class="control-item"> <label for="input-showButtonBaseText">Show Text:</label> <input type="text" id="input-showButtonBaseText" data-config-key="showButtonBaseText" value="Explore Topics"> </div>
+                            <div class="control-item"> <label for="input-hideButtonBaseText">Hide Text:</label> <input type="text" id="input-hideButtonBaseText" data-config-key="hideButtonBaseText" value="Hide Contents"> </div>
+                        </div>
+
+                        <!-- Slide 2: Button & Icons -->
+                        <div class="control-group slider-slide">
+                           <span class="control-group-title">Button & Icons</span>
+                            <div class="control-item"> <label for="input-showIconClass">Show Icon:</label> <input type="text" id="input-showIconClass" data-config-key="showIconClass" value="fa-solid fa-chevron-down"> </div>
+                            <div class="control-item"> <label for="input-hideIconClass">Hide Icon:</label> <input type="text" id="input-hideIconClass" data-config-key="hideIconClass" value="fa-solid fa-chevron-up"> </div>
+                            <div class="control-item"> <label for="input-useIcons">List Icons:</label> <input type="checkbox" id="input-useIcons" data-config-key="useIcons" checked> </div>
+                            <div class="control-item"> <label for="input-h2IconClass">H2 Icon:</label> <input type="text" id="input-h2IconClass" data-config-key="h2IconClass" value="fa-solid fa-book-reader"> </div>
+                            <div class="control-item"> <label for="input-h3IconClass">H3 Icon:</label> <input type="text" id="input-h3IconClass" data-config-key="h3IconClass" value="fa-regular fa-circle"> </div>
+                           <div class="control-item"> <label for="input-h4IconClass">H4 Icon:</label> <input type="text" id="input-h4IconClass" data-config-key="h4IconClass" value="fa-solid fa-square-caret-right"> </div>
+                           <div class="control-item"> <label for="input-toc-icon-size">List Icon Size:</label> <input type="number" id="input-toc-icon-size" data-variable="--toc-icon-size" data-unit="em" value="1.1" min="0.5" max="2" step="0.1"><span class="unit-label">em</span> </div>
+                           <p style="font-size: 11px; color: var(--ui-text-light); opacity: 0.7; width: 100%; text-align: center; margin-top: 10px; flex-basis: 100%;">Font Awesome 6 Free (e.g., fa-solid fa-star)</p>
+                        </div>
+
+                         <!-- Slide 3: TOC Box Style -->
+                        <div class="control-group slider-slide">
+                           <span class="control-group-title">TOC Box Style</span>
+                            <div class="control-item"><label for="input-toc-bg-start">BG Start:</label><input type="color" id="input-toc-bg-start" data-variable="--toc-bg-start" value="#fff0f5"></div>
+                            <div class="control-item"><label for="input-toc-bg-end">BG End:</label><input type="color" id="input-toc-bg-end" data-variable="--toc-bg-end" value="#fffacd"></div>
+                            <div class="control-item"><label for="input-toc-border">Border:</label><input type="color" id="input-toc-border" data-variable="--toc-border" value="#ffb6c1"></div>
+                            <div class="control-item"><label for="input-toc-border-style">Border Style:</label> <select id="input-toc-border-style" data-variable="--toc-border-style"> <option value="solid" selected>Solid</option> <option value="dashed">Dashed</option> <option value="dotted">Dotted</option> <option value="double">Double</option> <option value="groove">Groove</option> <option value="ridge">Ridge</option> <option value="inset">Inset</option> <option value="outset">Outset</option> <option value="none">None</option> </select></div>
+                            <div class="control-item"><label for="input-toc-shadow">Shadow (RGBA):</label><input type="text" id="input-toc-shadow" data-variable="--toc-shadow" value="rgba(255, 105, 180, 0.15)"></div>
+                            <div class="control-item"><label for="input-toc-box-radius">Box Radius:</label><input type="number" id="input-toc-box-radius" data-variable="--toc-box-radius" data-unit="px" value="8"><span class="unit-label">px</span></div>
+                            <div class="control-item"><label for="input-toc-padding-top">Padding Top:</label><input type="number" id="input-toc-padding-top" data-variable="--toc-padding-top" data-unit="px" value="20"><span class="unit-label">px</span></div>
+                            <div class="control-item"><label for="input-toc-padding-bottom">Padding Btm:</label><input type="number" id="input-toc-padding-bottom" data-variable="--toc-padding-bottom" data-unit="px" value="20"><span class="unit-label">px</span></div>
+                             <div class="control-item"><label for="input-toc-padding-horizontal">Padding L/R:</label><input type="number" id="input-toc-padding-horizontal" data-variable="--toc-padding-horizontal" data-unit="px" value="22"><span class="unit-label">px</span></div>
+                        </div>
+
+                         <!-- Slide 4: TOC Title Style -->
+                         <div class="control-group slider-slide">
+                             <span class="control-group-title">TOC Title Style</span>
+                             <div class="control-item"><label for="input-toc-title-color">Title Color:</label><input type="color" id="input-toc-title-color" data-variable="--toc-title-color" value="#c71585"></div>
+                             <div class="control-item"><label for="input-toc-title-border">Border Color:</label><input type="color" id="input-toc-title-border" data-variable="--toc-title-border" value="#dc143c"></div>
+                             <div class="control-item"><label for="input-toc-title-border-style">Border Style:</label> <select id="input-toc-title-border-style" data-variable="--toc-title-border-style"> <option value="dashed" selected>Dashed</option> <option value="solid">Solid</option> <option value="dotted">Dotted</option> <option value="none">None</option> </select></div>
+                             <div class="control-item"><label for="input-toc-title-weight">Font Weight:</label> <select id="input-toc-title-weight" data-variable="--toc-title-weight"> <option value="300">300 (Light)</option> <option value="normal">400 (Normal)</option> <option value="500">500 (Medium)</option> <option value="600">600 (Semi-Bold)</option> <option value="bold" selected>700 (Bold)</option> <option value="800">800 (Extra Bold)</option> <option value="900">900 (Black)</option> </select></div>
+                             <div class="control-item"><label for="input-toc-title-transform">Text Transform:</label> <select id="input-toc-title-transform" data-variable="--toc-title-transform"> <option value="none" selected>None</option> <option value="uppercase">UPPERCASE</option> <option value="capitalize">Capitalize</option> <option value="lowercase">lowercase</option> </select></div>
+                             <div class="control-item"><label for="input-toc-title-spacing">Letter Spacing:</label><input type="number" id="input-toc-title-spacing" data-variable="--toc-title-spacing" data-unit="px" value="0" min="-2" max="5" step="0.5"><span class="unit-label">px</span></div>
+                         </div>
+
+                        <!-- Slide 5: List Style -->
+                        <div class="control-group slider-slide">
+                           <span class="control-group-title">List Style</span>
+                            <div class="control-item"><label for="input-toc-column-count">Columns:</label><input type="number" id="input-toc-column-count" data-variable="--toc-column-count" value="2" min="1" max="4" step="1"></div>
+                            <div class="control-item"><label for="input-toc-column-gap">Col Gap:</label><input type="number" id="input-toc-column-gap" data-variable="--toc-column-gap" data-unit="px" value="30" min="10" max="50" step="5"><span class="unit-label">px</span></div>
+                            <div class="control-item"><label for="input-toc-column-rule">Rule Color:</label><input type="color" id="input-toc-column-rule" data-variable="--toc-column-rule" value="#90ee90"></div>
+                            <div class="control-item"><label for="input-toc-item-margin-bottom">Item Margin Btm:</label><input type="number" id="input-toc-item-margin-bottom" data-variable="--toc-item-margin-bottom" data-unit="px" value="8" min="0" max="20"><span class="unit-label">px</span></div>
+                            <div class="control-item"><label for="input-toc-list-line-height">Line Height:</label><input type="number" id="input-toc-list-line-height" data-variable="--toc-list-line-height" value="1.4" min="1" max="2.5" step="0.1"></div>
+                            <div class="control-item"><label for="input-toc-link-color">Link Color:</label><input type="color" id="input-toc-link-color" data-variable="--toc-link-color" value="#006400"></div>
+                            <div class="control-item"><label for="input-toc-list-hover-bg">Hover BG (RGBA):</label><input type="text" id="input-toc-list-hover-bg" data-variable="--toc-list-hover-bg" value="rgba(255, 99, 71, 0.15)"></div>
+                            <div class="control-item"><label for="input-toc-list-hover-text">Hover Text:</label><input type="color" id="input-toc-list-hover-text" data-variable="--toc-list-hover-text" value="#d2691e"></div>
+                            <div class="control-item"><label for="input-toc-link-weight">Link Weight:</label> <select id="input-toc-link-weight" data-variable="--toc-link-weight"> <option value="300">300 (Light)</option> <option value="normal">400 (Normal)</option> <option value="500" selected>500 (Medium)</option> <option value="600">600 (Semi-Bold)</option> <option value="bold">700 (Bold)</option> </select></div>
+                           <div class="control-item"><label for="input-toc-link-transform">Link Transform:</label> <select id="input-toc-link-transform" data-variable="--toc-link-transform"> <option value="none" selected>None</option> <option value="capitalize">Capitalize</option> <option value="uppercase">Uppercase</option> <option value="lowercase">lowercase</option> </select></div>
+                         </div>
+
+                         <!-- Slide 6: Subheading Style -->
+                        <div class="control-group slider-slide">
+                           <span class="control-group-title">Subheading Style</span>
+                           <div class="control-item"><label for="input-h3-font-size">H3 Font Size:</label><input type="number" id="input-h3-font-size" data-variable="--toc-h3-font-size" data-unit="em" value="1" min="0.8" max="1.5" step="0.05"><span class="unit-label">em</span></div>
+                           <div class="control-item"><label for="input-h4-font-size">H4 Font Size:</label><input type="number" id="input-h4-font-size" data-variable="--toc-h4-font-size" data-unit="em" value="0.95" min="0.7" max="1.4" step="0.05"><span class="unit-label">em</span></div>
+                           <div class="control-item"><label for="input-h3-indent">H3 Indent:</label><input type="number" id="input-h3-indent" data-variable="--toc-h3-indent" data-unit="px" value="10" min="0" max="30" step="2"><span class="unit-label">px</span></div>
+                           <div class="control-item"><label for="input-h3-padding">H3 Pad L:</label><input type="number" id="input-h3-padding" data-variable="--toc-h3-padding" data-unit="px" value="15" min="0" max="30" step="1"><span class="unit-label">px</span></div>
+                           <div class="control-item"><label for="input-toc-h3-indicator">H3 Indicator:</label><input type="color" id="input-toc-h3-indicator" data-variable="--toc-h3-indicator" value="#ffd700"></div>
+                           <div class="control-item"><label for="input-toc-h3-bg">H3 BG (RGBA):</label><input type="text" id="input-toc-h3-bg" data-variable="--toc-h3-bg" value="rgba(255, 215, 0, 0.05)"></div>
+                           <div class="control-item"><label for="input-toc-h3-hover-bg">H3 Hover BG (RGBA):</label><input type="text" id="input-toc-h3-hover-bg" data-variable="--toc-h3-hover-bg" value="rgba(255, 215, 0, 0.15)"></div>
+                           <div class="control-item"><label for="input-toc-h3-hover-indicator">H3 Hover Ind:</label><input type="color" id="input-toc-h3-hover-indicator" data-variable="--toc-h3-hover-indicator" value="#ffa500"></div>
+                           <div class="control-item"><label for="input-h4-indent">H4 Indent:</label><input type="number" id="input-h4-indent" data-variable="--toc-h4-indent" data-unit="px" value="20" min="0" max="40" step="2"><span class="unit-label">px</span></div>
+                           <div class="control-item"><label for="input-h4-padding">H4 Pad L:</label><input type="number" id="input-h4-padding" data-variable="--toc-h4-padding" data-unit="px" value="12" min="0" max="30" step="1"><span class="unit-label">px</span></div>
+                           <div class="control-item"><label for="input-toc-h4-indicator">H4 Indicator:</label><input type="color" id="input-toc-h4-indicator" data-variable="--toc-h4-indicator" value="#bdbdbd"></div>
+                        </div>
+
+                         <!-- Slide 7: Highlight & Scroll -->
+                        <div class="control-group slider-slide">
+                           <span class="control-group-title">Highlight & Scroll</span>
+                            <div class="control-item"><label for="input-highlight-bg">Highlight BG:</label><input type="color" id="input-highlight-bg" data-variable="--highlight-bg" value="#fffacd"></div>
+                            <div class="control-item"><label for="input-highlight-border">Highlight Border:</label><input type="color" id="input-highlight-border" data-variable="--highlight-border" value="#ffc400"></div>
+                             <div class="control-item"><label for="input-highlight-text-color">Highlight Text:</label><input type="color" id="input-highlight-text-color" data-variable="--highlight-text-color" value="#8B4513"></div>
+                            <div class="control-item"><label for="input-highlight-pulse-glow">Highlight Glow (RGBA):</label><input type="text" id="input-highlight-pulse-glow" data-variable="--highlight-pulse-glow" value="rgba(255, 196, 0, 0.4)"></div>
+                             <div class="control-item"><label for="input-content-highlight-bg">Content BG:</label><input type="color" id="input-content-highlight-bg" data-variable="--content-highlight-bg" value="#fff9e6"></div>
+                              <div class="control-item"><label for="input-content-highlight-border">Content Border:</label><input type="color" id="input-content-highlight-border" data-variable="--content-highlight-border" value="#ffe082"></div>
+                            <div class="control-item"> <label for="input-highlightDuration">Duration (ms):</label> <input type="number" id="input-highlightDuration" data-config-key="highlightDuration" value="3000" min="500" max="10000" step="500"><span class="unit-label">ms</span> </div>
+                             <div class="control-item"> <label for="input-scroll-padding-top">Scroll Padding:</label> <input type="number" id="input-scroll-padding-top" data-variable="--scroll-padding-top" data-unit="px" value="70" min="0" max="200" step="5"><span class="unit-label">px</span> </div>
+                        </div>
+
+                        <!-- Slide 8: Button Appearance -->
+                        <div class="control-group slider-slide">
+                            <span class="control-group-title">Button Appearance</span>
+                            <div class="control-item"><label for="input-button-bg-start">BG Start:</label><input type="color" id="input-button-bg-start" data-variable="--button-bg-start" value="#ff7f50"></div>
+                            <div class="control-item"><label for="input-button-bg-end">BG End:</label><input type="color" id="input-button-bg-end" data-variable="--button-bg-end" value="#ff6347"></div>
+                            <div class="control-item"><label for="input-button-border">Border:</label><input type="color" id="input-button-border" data-variable="--button-border" value="#e5533d"></div>
+                            <div class="control-item"><label for="input-button-text-color">Text Color:</label><input type="color" id="input-button-text-color" data-variable="--button-text-color" value="#ffffff"></div>
+                            <div class="control-item"><label for="input-button-glow">Glow (RGBA):</label><input type="text" id="input-button-glow" data-variable="--button-glow" value="rgba(255, 99, 71, 0.7)"></div>
+                            <div class="control-item"><label for="input-button-radius">Radius:</label><input type="number" id="input-button-radius" data-variable="--button-radius" data-unit="px" value="8" min="0" max="30"><span class="unit-label">px</span></div>
+                            <div class="control-item"><label for="input-button-padding-v">Padding V:</label><input type="number" id="input-button-padding-v" data-variable="--button-padding-v" data-unit="px" value="12" min="5" max="20"><span class="unit-label">px</span></div>
+                            <div class="control-item"><label for="input-button-padding-h">Padding H:</label><input type="number" id="input-button-padding-h" data-variable="--button-padding-h" data-unit="px" value="18" min="10" max="30"><span class="unit-label">px</span></div>
+                            <div class="control-item"><label for="input-button-font-size">Font Size:</label><input type="number" id="input-button-font-size" data-variable="--button-font-size" data-unit="em" value="1.1" min="0.8" max="1.5" step="0.1"><span class="unit-label">em</span></div>
+                             <div class="control-item"><label for="input-button-font-weight">Font Weight:</label> <select id="input-button-font-weight" data-variable="--button-font-weight"> <option value="300">300 (Light)</option> <option value="normal">400 (Normal)</option> <option value="500">500 (Medium)</option> <option value="600">600 (Semi-Bold)</option> <option value="bold" selected>700 (Bold)</option> <option value="800">800 (Extra Bold)</option> </select></div>
+                             <div class="control-item"><label for="input-button-letter-spacing">Letter Spacing:</label><input type="number" id="input-button-letter-spacing" data-variable="--button-letter-spacing" data-unit="px" value="0.5" min="-1" max="3" step="0.5"><span class="unit-label">px</span></div>
+                             <div class="control-item"><label for="input-button-icon-size">Icon Size:</label><input type="number" id="input-button-icon-size" data-variable="--button-icon-size" data-unit="em" value="1" min="0.7" max="1.5" step="0.1"><span class="unit-label">em</span></div>
+                        </div>
+
+                    </div>
+                    <div class="slider-navigation">
+                        <div class="slider-buttons-row">
+                            <button id="prev-slide-btn">Previous</button>
+                            <button id="next-slide-btn">Next</button>
+                        </div>
+                        <span id="current-slide-info">Basic Configuration</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CSS कोड डिस्प्ले बॉक्स -->
+            <div class="section-container code-box-wrapper-container code-box-wrapper-container-css">
+                 <div class="code-box-wrapper"> <div class="code-box-container"> <div class="code-box-header"> <span class="code-box-title"><i class="fab fa-css3-alt"></i>Generated CSS Code</span> </div> <button class="copy-code-button" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i>Copy CSS</button> <textarea readonly class="code-display-textarea thin-scrollbar" id="cssCodeArea">/* ===== TOC & Highlight Styles v3 - START ===== */
+/* --- Generated CSS Variables START --- */
+:root {
+  --toc-bg-start: #fff0f5;
+  --toc-bg-end: #fffacd;
+  --toc-border: #ffb6c1;
+  --toc-shadow: rgba(255, 105, 180, 0.15);
+  --toc-title-color: #c71585;
+  --toc-title-border: #dc143c;
+  --toc-column-rule: #90ee90;
+  --toc-list-hover-bg: rgba(255, 99, 71, 0.15);
+  --toc-list-hover-text: #d2691e;
+  --toc-h3-indicator: #ffd700;
+  --toc-h3-bg: rgba(255, 215, 0, 0.05);
+  --toc-h3-hover-bg: rgba(255, 215, 0, 0.15);
+  --toc-h3-hover-indicator: #ffa500;
+  --toc-h4-indicator: #bdbdbd;
+  --toc-link-color: #006400;
+  --highlight-bg: #fffacd;
+  --highlight-border: #ffc400;
+  --highlight-pulse-glow: rgba(255, 196, 0, 0.4);
+  --content-highlight-bg: #fff9e6;
+  --button-bg-start: #ff7f50;
+  --button-bg-end: #ff6347;
+  --button-border: #e5533d;
+  --button-text-color: #ffffff;
+  --button-glow: rgba(255, 99, 71, 0.7);
+  --scroll-padding-top: 70px;
+  --toc-column-count: 2;
+  --toc-column-gap: 30px;
+  --toc-h3-indent: 10px;
+  --toc-h3-padding: 15px;
+  --toc-h4-indent: 20px;
+  --toc-h4-padding: 12px;
+  --button-radius: 8px;
+  --button-padding-v: 12px;
+  --button-padding-h: 18px;
+  --button-font-size: 1.1em;
+  --toc-box-radius: 8px;
+  --toc-icon-size: 1.1em;
+  --toc-border-style: solid;
+  --toc-padding-top: 20px;
+  --toc-padding-bottom: 20px;
+  --toc-padding-horizontal: 22px;
+  --toc-title-weight: 700;
+  --toc-title-transform: none;
+  --toc-title-spacing: 0px;
+  --toc-title-border-style: dashed;
+  --toc-list-line-height: 1.4;
+  --toc-item-margin-bottom: 8px;
+  --toc-link-weight: 500;
+  --toc-link-transform: none;
+  --toc-h3-font-size: 1em;
+  --toc-h4-font-size: 0.95em;
+  --highlight-text-color: #8B4513;
+  --content-highlight-border: #ffe082;
+  --button-font-weight: bold;
+  --button-letter-spacing: 0.5px;
+}
+/* --- End Generated CSS Variables --- */
+
+html {
+  scroll-behavior: smooth !important;
+  scroll-padding-top: var(--scroll-padding-top, 70px);
+}
+@keyframes tocFadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes buttonPulseGlow { 0% { box-shadow: 0 0 6px var(--button-glow), 0 0 12px var(--button-glow); transform: scale(1); } 50% { box-shadow: 0 0 12px var(--button-glow), 0 0 24px var(--button-glow), 0 0 36px var(--button-glow); transform: scale(1.03); } 100% { box-shadow: 0 0 6px var(--button-glow), 0 0 12px var(--button-glow); transform: scale(1); } }
+@keyframes highlightPulse { 0% { box-shadow: 0 0 0 2px var(--highlight-border), 0 0 0 4px var(--highlight-pulse-glow); background-color: var(--highlight-bg); transform: scale(1); } 50% { box-shadow: 0 0 0 4px var(--highlight-border), 0 0 0 8px var(--highlight-pulse-glow); background-color: #fff59d; transform: scale(1.01); } 100% { box-shadow: 0 0 0 2px var(--highlight-border), 0 0 0 4px var(--highlight-pulse-glow); background-color: var(--highlight-bg); transform: scale(1); } }
+
+#toc-container { margin: 25px 0 30px 0; clear: both; position: relative; }
+#toc-toggle-button { display: block; width: 100%; text-align: center; cursor: pointer; color: var(--button-text-color); border: 1px solid var(--button-border); border-radius: var(--button-radius); text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3); transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.3s ease, border-radius 0.2s ease; background: linear-gradient(140deg, var(--button-bg-start), var(--button-bg-end)); font-size: var(--button-font-size); padding: var(--button-padding-v) var(--button-padding-h); font-weight: var(--button-font-weight); letter-spacing: var(--button-letter-spacing); position: relative; overflow: hidden; }
+#toc-toggle-button.toc-closed-effect { animation: buttonPulseGlow 2s infinite ease-in-out; }
+#toc-toggle-button:hover { background: linear-gradient(140deg, var(--button-bg-end), var(--button-bg-start)); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); transform: translateY(-2px); }
+#toc-toggle-button::before { content: ''; position: absolute; top: 0; left: -120%; width: 60%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent); transform: skewX(-25deg); transition: left 0.8s ease-in-out; }
+#toc-toggle-button:hover::before { left: 150%; }
+#toc-container.toc-is-shown #toc-toggle-button { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+#toc { max-height: 0; opacity: 0; overflow: hidden; margin: 0; padding: 0 var(--toc-padding-horizontal); border: 2px solid var(--toc-border); border-top: none; border-radius: 0 0 var(--toc-box-radius) var(--toc-box-radius); background: linear-gradient(135deg, var(--toc-bg-start), var(--toc-bg-end)); box-shadow: 0 4px 12px var(--toc-shadow); transition: max-height 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease-in-out 0.15s, padding-top 0.7s cubic-bezier(0.4, 0, 0.2, 1), padding-bottom 0.7s cubic-bezier(0.4, 0, 0.2, 1), border-width 0.1s ease-in-out 0.6s; border-style: var(--toc-border-style); }
+#toc.toc-visible { max-height: 2000px; opacity: 1; padding-top: var(--toc-padding-top); padding-bottom: var(--toc-padding-bottom); border-width: 0 2px 2px 2px; }
+#toc h2 { font-size: 1.25em; margin: 0 0 20px 0; padding-bottom: 12px; border-bottom-width: 2px; border-bottom-style: var(--toc-title-border-style); color: var(--toc-title-color); font-weight: var(--toc-title-weight); text-align: center; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); column-span: all; -webkit-column-span: all; animation: tocFadeIn 0.6s ease-out 0.2s backwards; text-transform: var(--toc-title-transform); letter-spacing: var(--toc-title-spacing); border-bottom-color: var(--toc-title-border); }
+#toc ul { list-style-type: none; padding-left: 0; margin: 0; column-count: var(--toc-column-count); column-gap: var(--toc-column-gap); column-rule: 1px dotted var(--toc-column-rule); border-radius: 5px; padding: 12px 8px; }
+#toc li { margin-bottom: 0; line-height: var(--toc-list-line-height); break-inside: avoid; -webkit-column-break-inside: avoid; page-break-inside: avoid; position: relative; }
+#toc li + li { margin-top: var(--toc-item-margin-bottom); }
+#toc li.toc-level-3 { margin-left: var(--toc-h3-indent); padding-left: var(--toc-h3-padding); border-left: 3px solid var(--toc-h3-indicator); background-color: var(--toc-h3-bg); border-radius: 4px; transition: background-color 0.3s ease, border-color 0.3s ease; font-size: var(--toc-h3-font-size); }
+#toc li.toc-level-3:hover { background-color: var(--toc-h3-hover-bg); border-left-color: var(--toc-h3-hover-indicator, var(--toc-h3-indicator)); }
+#toc li.toc-level-4 { margin-left: var(--toc-h4-indent); padding-left: var(--toc-h4-padding); border-left: 3px solid var(--toc-h4-indicator); font-style: italic; font-size: var(--toc-h4-font-size); }
+#toc a { text-decoration: none; color: var(--toc-link-color); transition: color 0.25s ease, transform 0.25s ease, background-color 0.3s ease, box-shadow 0.3s ease; display: flex; align-items: center; padding: 8px 12px; border-radius: 4px; font-weight: var(--toc-link-weight); text-transform: var(--toc-link-transform); position: relative; overflow: hidden; }
+#toc a:hover { color: var(--toc-list-hover-text) !important; background-color: var(--toc-list-hover-bg); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1); transform: translateX(4px) scale(1.01); }
+#toc a i[class*="fa-"] { margin-right: 12px; font-size: var(--toc-icon-size); width: 1.3em; text-align: center; transition: transform 0.35s cubic-bezier(0.68, -0.55, 0.27, 1.55), color 0.3s ease; flex-shrink: 0; }
+#toc-toggle-button i { font-size: var(--button-icon-size); }
+#toc a:hover i[class*="fa-"] { transform: rotate(10deg) scale(1.2); }
+#toc li:nth-child(5n+1) a i { color: #1e90ff; } #toc li:nth-child(5n+2) a i { color: #32cd32; } #toc li:nth-child(5n+3) a i { color: #ff4500; } #toc li:nth-child(5n+4) a i { color: #8a2be2; } #toc li:nth-child(5n+5) a i { color: #ff69b4; }
+.highlight-target { background-color: var(--highlight-bg) !important; box-shadow: 0 0 0 2px var(--highlight-border) !important; border-radius: 5px !important; padding: 4px 8px !important; margin: -4px -8px !important; animation: highlightPulse 1.6s infinite ease-in-out !important; color: var(--highlight-text-color) !important; display: inline-block !important; width: auto !important; }
+.highlight-content { background-color: var(--content-highlight-bg) !important; transition: background-color 0.4s ease-in-out !important; border-radius: 5px !important; padding: 12px 18px !important; margin-top: 8px !important; margin-bottom: 8px !important; box-shadow: 0 2px 8px rgba(218, 165, 32, 0.15) !important; display: block !important; border: 1px solid var(--content-highlight-border); }
+@media(max-width: 768px) { #toc ul { column-count: 1; column-rule: none; } #toc { padding: 15px; } #toc h2 { font-size: 1.15em; } #toc li.toc-level-3 { margin-left: 5px; padding-left: 12px; } #toc a { padding: 6px 10px; } }
+/* ===== TOC & Highlight Styles v3 - END ===== */
+</textarea>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- JS कोड डिस्प्ले बॉक्स -->
+            <div class="section-container code-box-wrapper-container code-box-wrapper-container-js">
+                 <div class="code-box-wrapper"> <div class="code-box-container"> <div class="code-box-header"> <span class="code-box-title"><i class="fab fa-js-square"></i>Generated JavaScript Code</span> </div> <button class="copy-code-button" onclick="copyCode(this)"><i class="fa-regular fa-copy"></i>Copy JS</button> <textarea readonly class="code-display-textarea thin-scrollbar" id="jsCodeArea">
+document.addEventListener("DOMContentLoaded", function () {
+  // --- Configuration (Generated by Tool) ---
+  const config = {
+    postContainerSelector: ".post-body",
+    headingsSelector: "h2, h3",
+    minHeadingsForToc: 2,
+    tocTitleText: "Table of Contents",
+    showButtonBaseText: "Explore Topics",
+    hideButtonBaseText: "Hide Contents",
+    showIconClass: 'fa-solid fa-chevron-down',
+    hideIconClass: 'fa-solid fa-chevron-up',
+    highlightDuration: 3000,
+    useIcons: true,
+    h2IconClass: 'fa-solid fa-book-reader',
+    h3IconClass: 'fa-regular fa-circle',
+    h4IconClass: 'fa-solid fa-square-caret-right'
+  };
+  // --- End Configuration ---
+
+  let currentHighlightTimeout = null;
+  let tocContainer = null;
+  let toc = null;
+  let toggleButton = null;
+
+  function createSafeId(heading, index) {
+    let textForId = (heading.textContent || '').trim().toLowerCase();
+    let baseId = textForId.replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+|-+$/g, '');
+    let id = "toc-h-" + (baseId || index);
+    let counter = 1; const originalId = id;
+    while (document.getElementById(id)) { id = originalId + '-' + counter; counter++; }
+    return id;
+  }
+
+  function clearHighlights(specificHeading = null, specificContent = []) {
+    if (currentHighlightTimeout) { clearTimeout(currentHighlightTimeout); currentHighlightTimeout = null; }
+    if (specificHeading) { specificHeading.classList.remove('highlight-target'); }
+    if (specificContent.length > 0) { specificContent.forEach(el => el.classList.remove('highlight-content')); }
+    else if (!specificHeading && !specificContent.length) {
+      document.querySelectorAll('.highlight-target').forEach(el => el.classList.remove('highlight-target'));
+      document.querySelectorAll('.highlight-content').forEach(el => el.classList.remove('highlight-content'));
+    }
+  }
+
+  function applyHighlight(targetHeading) {
+    clearHighlights();
+    targetHeading.classList.add('highlight-target');
+    const highlightedContent = [];
+    let sibling = targetHeading.nextElementSibling;
+    while (sibling && !sibling.matches(config.headingsSelector) && !sibling.matches('#toc-container')) {
+      if (sibling.nodeType === 1) { sibling.classList.add('highlight-content'); highlightedContent.push(sibling); }
+      sibling = sibling.nextElementSibling;
+    }
+    currentHighlightTimeout = setTimeout(() => { clearHighlights(targetHeading, highlightedContent); }, config.highlightDuration);
+  }
+
+ function smoothScrollToTarget(element) {
+      if (!element) return;
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function controlButtonGlow(buttonElement, shouldGlow) {
+      if (!buttonElement) return;
+      if (shouldGlow) {
+          setTimeout(() => {
+              if (!toc?.classList.contains('toc-visible')) {
+                   buttonElement.classList.add('toc-closed-effect');
+              }
+          }, 700);
+      } else {
+          buttonElement.classList.remove('toc-closed-effect');
+      }
+  }
+
+  function updateButtonContent(isExpanded) {
+      if (!toggleButton) return;
+      const text = isExpanded ? config.hideButtonBaseText : config.showButtonBaseText;
+      const iconClass = isExpanded ? config.hideIconClass : config.showIconClass;
+      toggleButton.innerHTML = `${text} <i class="${iconClass}" aria-hidden="true" style="margin-left: 8px;"></i>`;
+      toggleButton.setAttribute('aria-expanded', String(isExpanded));
+  }
+
+  function initializeToc() {
+    const postContent = document.querySelector(config.postContainerSelector);
+    if (!postContent) { console.warn("TOC Error: Container '" + config.postContainerSelector + "' not found. Please check the selector in the TOC configuration."); return; }
+
+    const headings = Array.from(postContent.querySelectorAll(config.headingsSelector));
+    const validHeadings = [];
+    let firstValidHeading = null;
+
+    headings.forEach(heading => {
+      if (!heading.closest('#toc-container') && heading.textContent?.trim()) {
+        validHeadings.push(heading);
+        if (!firstValidHeading) firstValidHeading = heading;
+      }
+    });
+
+    if (validHeadings.length < config.minHeadingsForToc) {
+        console.log("TOC Info: Not enough headings ("+validHeadings.length+") found for selector '"+config.headingsSelector+"' inside '"+config.postContainerSelector+"'. Minimum required is "+config.minHeadingsForToc+". TOC not generated.");
+        const existingToc = document.getElementById('toc-container'); // Remove existing if not enough headings
+        if (existingToc) existingToc.remove();
+        return;
+    }
+
+    const existingToc = document.getElementById('toc-container');
+    if (existingToc) existingToc.remove();
+
+    tocContainer = document.createElement("div"); tocContainer.id = "toc-container";
+    toggleButton = document.createElement("button"); toggleButton.id = "toc-toggle-button"; toggleButton.type = "button";
+    updateButtonContent(false);
+    toggleButton.setAttribute("aria-controls", "toc");
+    controlButtonGlow(toggleButton, true);
+
+    toc = document.createElement("div"); toc.id = "toc";
+    const tocTitle = document.createElement("h2");
+    tocTitle.textContent = config.tocTitleText;
+    toc.appendChild(tocTitle);
+    const tocList = document.createElement("ul");
+
+    validHeadings.forEach((heading, index) => {
+      let id = heading.getAttribute("id");
+      if (!id || document.querySelectorAll('#' + id).length > 1) {
+          id = createSafeId(heading, index);
+          heading.setAttribute("id", id);
+       }
+      const listItem = document.createElement("li");
+      const headingLevel = heading.tagName.toLowerCase();
+      listItem.classList.add('toc-level-' + headingLevel.replace('h',''));
+      const link = document.createElement("a"); link.setAttribute("href", "#" + id);
+
+      let iconClass = "";
+      if (config.useIcons) {
+        if (headingLevel === 'h2' && config.h2IconClass) iconClass = config.h2IconClass;
+        else if (headingLevel === 'h3' && config.h3IconClass) iconClass = config.h3IconClass;
+        else if (headingLevel === 'h4' && config.h4IconClass) iconClass = config.h4IconClass;
+
+        if (iconClass) {
+          const iconElement = document.createElement("i");
+          iconClass.split(' ').forEach(cls => { if (cls) iconElement.classList.add(cls); });
+          iconElement.setAttribute("aria-hidden", "true");
+          link.appendChild(iconElement);
+        }
+      }
+      link.appendChild(document.createTextNode((heading.textContent || '').trim()));
+      listItem.appendChild(link); tocList.appendChild(listItem);
+    });
+
+    toc.appendChild(tocList); tocContainer.appendChild(toggleButton); tocContainer.appendChild(toc);
+
+    if (firstValidHeading?.parentNode) {
+        firstValidHeading.parentNode.insertBefore(tocContainer, firstValidHeading);
+        console.log("TOC Info: TOC generated and inserted successfully before the first heading found with selector '" + config.headingsSelector + "'.");
+    } else if (postContent.firstChild) {
+        postContent.insertBefore(tocContainer, postContent.firstChild);
+         console.log("TOC Info: No valid headings found, but TOC container inserted at the beginning of '" + config.postContainerSelector + "'.");
+    } else {
+        postContent.appendChild(tocContainer);
+         console.log("TOC Info: Post container '" + config.postContainerSelector + "' is empty. TOC container appended.");
+    }
+
+    setupEventListeners();
+  }
+
+  function setupEventListeners() {
+    if (!tocContainer || !toc || !toggleButton) return;
+    toggleButton.addEventListener('click', () => {
+      const isExpanded = toc.classList.toggle('toc-visible');
+      updateButtonContent(isExpanded);
+      tocContainer.classList.toggle('toc-is-shown', isExpanded);
+      controlButtonGlow(toggleButton, !isExpanded);
+    });
+    toc.addEventListener('click', (event) => {
+      const linkElement = event.target.closest('a');
+      if (linkElement && linkElement.getAttribute('href')?.startsWith('#')) {
+        event.preventDefault();
+        const targetId = linkElement.getAttribute('href').substring(1);
+        const targetHeading = document.getElementById(targetId);
+        if (targetHeading) {
+           if (!toc.classList.contains('toc-visible')) {
+               toc.classList.add('toc-visible');
+               updateButtonContent(true);
+               tocContainer.classList.add('toc-is-shown');
+               controlButtonGlow(toggleButton, false);
+           }
+           smoothScrollToTarget(targetHeading);
+           setTimeout(() => { applyHighlight(targetHeading); }, 300);
+        } else {
+            console.warn("TOC Warning: Target heading with ID '" + targetId + "' not found on the page.");
+        }
+      }
+    });
+  }
+
+  try { initializeToc(); }
+  catch (error) { console.error("TOC Script Initialization Error:", error); }
+});
+</textarea>
+                    </div>
+                 </div>
+            </div>
+        </div> <!-- End .controls-and-code -->
+
+        <div class="preview-column">
+            <!-- लाइव प्रीव्यू -->
+            <div class="section-container widget-preview-wrapper-container">
+                <div class="widget-preview-wrapper">
+                    <h3 class="widget-preview-title"><i class="fas fa-eye"></i>Live Preview</h3>
+                    <div class="widget-preview-container thin-scrollbar" id="live-preview-area">
+                        <style id="preview-styles">
+                            #live-preview-area { /* Default values set here, updated by JS */
+                                --toc-bg-start: #fff0f5; --toc-bg-end: #fffacd; --toc-border: #ffb6c1; --toc-shadow: rgba(255, 105, 180, 0.15); --toc-title-color: #c71585; --toc-title-border: #dc143c; --toc-column-rule: #90ee90; --toc-list-hover-bg: rgba(255, 99, 71, 0.15); --toc-list-hover-text: #d2691e; --toc-h3-indicator: #ffd700; --toc-h3-bg: rgba(255, 215, 0, 0.05); --toc-h3-hover-bg: rgba(255, 215, 0, 0.15); --toc-h3-hover-indicator: #ffa500; --toc-h4-indicator: #bdbdbd; --toc-link-color: #006400;
+                                --highlight-bg: #fffacd; --highlight-border: #ffc400; --highlight-pulse-glow: rgba(255, 196, 0, 0.4); --content-highlight-bg: #fff9e6; --highlight-text-color: #8B4513; --content-highlight-border: #ffe082;
+                                --button-bg-start: #ff7f50; --button-bg-end: #ff6347; --button-border: #e5533d; --button-text-color: #ffffff; --button-glow: rgba(255, 99, 71, 0.7); --button-radius: 8px; --button-padding-v: 12px; --button-padding-h: 18px; --button-font-size: 1.1em; --button-font-weight: bold; --button-letter-spacing: 0.5px; --button-icon-size: 1em;
+                                --scroll-padding-top: 70px; --toc-column-count: 2; --toc-column-gap: 30px; --toc-h3-indent: 10px; --toc-h3-padding: 15px; --toc-h4-indent: 20px; --toc-h4-padding: 12px; --toc-box-radius: 8px;
+                                --toc-padding-top: 20px; --toc-padding-bottom: 20px; --toc-padding-horizontal: 22px; --toc-border-style: solid;
+                                --toc-title-weight: 700; --toc-title-transform: none; --toc-title-spacing: 0px; --toc-title-border-style: dashed;
+                                --toc-list-line-height: 1.4; --toc-item-margin-bottom: 8px; --toc-link-weight: 500; --toc-link-transform: none; --toc-h3-font-size: 1em; --toc-h4-font-size: 0.95em;
+                                --toc-icon-size: 1.1em;
+                            }
+                        </style>
+                        <div id="toc-preview-content">
+                            <!-- Sample post content -->
+                            <h2>अध्याय 1: जंगल की पुकार</h2>
+                            <p>घने, रहस्यमयी जंगल के किनारे बसे एक छोटे से गाँव में आरव नाम का एक जिज्ञासु लड़का रहता था। जंगल उसे हमेशा से आकर्षित करता था, उसकी अनकही कहानियाँ, छिपे हुए रास्ते और रात में आने वाली अजीब आवाजें उसे बुलाती थीं। गाँव के बड़े-बुजुर्ग जंगल में जाने से मना करते थे, वे पुरानी किंवदंतियों और खोए हुए यात्रियों की कहानियाँ सुनाते थे। लेकिन आरव का मन नहीं मानता था।</p>
+                            <h2>अध्याय 2: पहला कदम और रहस्यमयी नक्शा</h2>
+                            <p>एक सुनहरी सुबह, आरव ने हिम्मत जुटाई और जंगल की ओर पहला कदम बढ़ा दिया। अंदर का दृश्य शांत और सुंदर था। ऊँचे पेड़ आसमान छू रहे थे और रंग-बिरंगे पक्षी चहचहा रहे थे।</p>
+                            <h3>उप-अध्याय 2.1: पुराना बरगद</h3>
+                            <p>चलते-चलते वह एक विशाल, पुराने बरगद के पेड़ के पास पहुँचा। पेड़ के नीचे एक छोटा सा पत्थर का चबूतरा बना था।</p>
+                            <h3>उप-अध्याय 2.2: छिपा हुआ सुराग</h3>
+                            <p>आरव ने चबूतरे पर बैठकर आराम किया। तभी उसकी नजर एक ढीले पत्थर पर पड़ी। पत्थर हटाने पर उसे चमड़े में लिपटा एक पुराना नक्शा मिला!</p>
+                            <h3>उप-अध्याय 2.3: नक्शे का रहस्य</h3>
+                             <p>नक्शे पर अजीब निशान बने थे और जंगल के बीचों-बीच एक खास जगह की ओर इशारा था। आरव का दिल रोमांच से भर गया।</p>
+                            <h2>अध्याय 3: सफ़र की चुनौतियाँ</h2>
+                            <p>नक्शे के सहारे आरव और गहरे जंगल में बढ़ता गया। रास्ता आसान नहीं था। घनी झाड़ियाँ और फिसलन भरे पत्थर थे।</p>
+                            <h3>उप-अध्याय 3.1: नदी का किनारा</h3>
+                            <p>उसे एक तेज बहती नदी पार करनी थी। उसने गिरे हुए पेड़ के तने का इस्तेमाल करके सावधानी से नदी पार की।</p>
+                            <h3>उप-अध्याय 3.2: भुलभुलैया गुफा</h3>
+                            <p>नदी पार करने के बाद नक्शा उसे एक अंधेरी गुफा के मुहाने पर ले आया। मशाल जलाकर उसने सही रास्ता चुना।</p>
+                            <h3>उप-अध्याय 3.3: रात का पड़ाव</h3>
+                             <p>दिन ढलने पर उसने गुफा से बाहर निकलकर आग जलाई और रात बिताई।</p>
+                            <h2>अध्याय 4: मंजिल और जंगल का रहस्य</h2>
+                            <p>कई घंटों की चढ़ाई के बाद, आरव पहाड़ी की चोटी पर पहुँच गया। वहाँ एक प्राचीन, पत्थर का मंदिर खड़ा था।</p>
+                            <h3>उप-अध्याय 4.1: मंदिर का द्वार</h3>
+                            <p>मंदिर का द्वार बंद था। नक्शे पर बने प्रतीकों से उसने ताला खोला।</p>
+                            <h3>उप-अध्याय 4.2: चमकता क्रिस्टल</h3>
+                            <p>मंदिर के अंदर, वेदी पर एक बड़ा, चमकता हुआ क्रिस्टल रखा था, जिससे नीली रोशनी निकल रही थी। यही जंगल का रहस्य था।</p>
+                             <h3>उप-अध्याय 4.3: वापसी का संकल्प</h3>
+                             <p>आरव ने क्रिस्टल को वहीं रहने दिया और जंगल के प्रति सम्मान और समझ के साथ गाँव वापस लौट आया।</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- End .preview-column -->
+    </div> <!-- End .customizer-wrapper -->
+
+    <script>
+    //<![CDATA[
+        let tocPreviewInstance = null;
+        let slides = [];
+        let currentSlideIndex = 0;
+        let slideContainer, slideInfoElement, nextBtn, prevBtn;
+        let BASE_CSS_TEMPLATE = '';
+        let BASE_JS_TEMPLATE = '';
+
+        // --- हेल्पर फंक्शन्स ---
+        function copyCode(button) {
+            const codeBox = button.closest('.code-box-wrapper-container');
+            if (!codeBox) return;
+            const textArea = codeBox.querySelector('.code-display-textarea');
+            if (!textArea) return;
+            navigator.clipboard.writeText(textArea.value).then(() => {
+                const originalContent = button.innerHTML;
+                button.innerHTML = '<i class="fa-solid fa-check"></i>Copied!';
+                button.disabled = true;
+                setTimeout(() => {
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                }, 1500);
+            }).catch(err => { console.error('Failed to copy: ', err); alert('Copy failed!'); });
+        }
+
+        function formatCssVariableValue(value, variableName) {
+             if (variableName === '--toc-shadow' || variableName === '--highlight-pulse-glow' || variableName === '--button-glow') {
+                 try {
+                     if (value.startsWith('#')) { const r = parseInt(value.slice(1, 3), 16), g = parseInt(value.slice(3, 5), 16), b = parseInt(value.slice(5, 7), 16); if (!isNaN(r) && !isNaN(g) && !isNaN(b)) { let alpha = (variableName === '--toc-shadow') ? 0.15 : 0.7; return `rgba(${r}, ${g}, ${b}, ${alpha})`; } }
+                     if (value.toLowerCase().startsWith('rgba(') && value.endsWith(')')) return value; return 'rgba(0,0,0,0.1)';
+                 } catch { return 'rgba(0,0,0,0.1)'; }
+             } else if (variableName === '--toc-h3-bg' || variableName === '--toc-h3-hover-bg' || variableName === '--toc-list-hover-bg') {
+                  try {
+                     if (value.startsWith('#')) { const r = parseInt(value.slice(1, 3), 16), g = parseInt(value.slice(3, 5), 16), b = parseInt(value.slice(5, 7), 16); if (!isNaN(r) && !isNaN(g) && !isNaN(b)) { let alpha = (variableName === '--toc-h3-hover-bg' || variableName === '--toc-list-hover-bg') ? 0.15 : 0.05; return `rgba(${r}, ${g}, ${b}, ${alpha})`; } }
+                      if (value.toLowerCase().startsWith('rgba(') && value.endsWith(')')) return value; return 'rgba(255,255,255,0.05)';
+                  } catch { return 'rgba(255,255,255,0.05)'; }
+             }
+             if (['--toc-border-style', '--toc-title-border-style', '--toc-title-transform', '--toc-link-transform', '--toc-title-weight', '--toc-link-weight', '--button-font-weight'].includes(variableName)) { return value; }
+             return value;
+         }
+
+        function formatJsConfigValue(value, key) {
+             if (typeof value === 'string') { if (key.toLowerCase().includes('iconclass')) return `'${value.replace(/'/g, "\\'")}'`; return `"${value.replace(/"/g, '\\"')}"`; }
+             if (typeof value === 'boolean') return String(value);
+             if (key === 'minHeadingsForToc' || key === 'highlightDuration') { const num = parseInt(value, 10); return isNaN(num) ? 0 : num; }
+             // Return other numbers as strings (JS engine often coerces anyway)
+             if (typeof value === 'number') return String(value);
+             return `"${String(value).replace(/"/g, '\\"')}"`;
+         }
+
+        // --- स्लाइडर फंक्शन्स ---
+        function showSlide(index) {
+            // मौजूदा कोड अपरिवर्तित रहेगा
+             if (!slides || slides.length === 0 || index < 0 || index >= slides.length) { console.error("Invalid slide index:", index); return; }
+             const currentActive = slideContainer.querySelector('.active-slide');
+             if (currentActive) { currentActive.classList.remove('active-slide'); }
+             const newSlide = slides[index];
+             newSlide.classList.add('active-slide');
+             currentSlideIndex = index;
+             const titleElement = newSlide.querySelector('.control-group-title');
+             if (slideInfoElement && titleElement) { slideInfoElement.textContent = titleElement.textContent; }
+             else if (slideInfoElement) { slideInfoElement.textContent = `Settings ${index + 1}`; }
+             prevBtn.disabled = index === 0;
+             nextBtn.disabled = index === slides.length - 1;
+        }
+        function nextSlide() { if (currentSlideIndex + 1 < slides.length) { showSlide(currentSlideIndex + 1); } }
+        function prevSlide() { if (currentSlideIndex - 1 >= 0) { showSlide(currentSlideIndex - 1); } }
+
+        // --- मुख्य अपडेट फंक्शन्स ---
+        function updatePreview(input) {
+            // मौजूदा कोड अपरिवर्तित रहेगा
+             const previewAreaStyles = document.getElementById('preview-styles');
+             if (!previewAreaStyles) return;
+
+             const variable = input.dataset.variable;
+             const configKey = input.dataset.configKey;
+             let value = input.type === 'checkbox' ? input.checked : input.value;
+             const unit = input.dataset.unit || '';
+
+             // Update CSS Variables
+             if (variable) {
+                  const formattedValue = formatCssVariableValue(value, variable);
+                  let rootStyle = null;
+                  try { for (let i = 0; i < previewAreaStyles.sheet.cssRules.length; i++) { if (previewAreaStyles.sheet.cssRules[i].selectorText === '#live-preview-area') { rootStyle = previewAreaStyles.sheet.cssRules[i].style; break; } } }
+                  catch (e) { console.warn("Could not access preview stylesheet rules.", e); }
+                  if (rootStyle) { rootStyle.setProperty(variable, formattedValue + unit); }
+                  else { const previewRoot = document.getElementById('live-preview-area'); if (previewRoot) previewRoot.style.setProperty(variable, formattedValue + unit); }
+             }
+
+             // Update Live Preview TOC Instance Config
+              if (configKey && tocPreviewInstance) {
+                  try {
+                      let configValue = input.type === 'checkbox' ? input.checked : value;
+                      if (configKey === 'minHeadingsForToc' || configKey === 'highlightDuration') { configValue = parseInt(configValue, 10) || 0; }
+                      tocPreviewInstance.updateConfig(configKey, configValue);
+                  } catch(e) { console.error("Error updating preview TOC instance:", e); }
+              }
+        }
+
+
+        function updateFullCodeArea() {
+            // मौजूदा कोड अपरिवर्तित रहेगा
+             const cssCodeArea = document.getElementById('cssCodeArea');
+             const jsCodeArea = document.getElementById('jsCodeArea');
+             if (!cssCodeArea || !jsCodeArea || !BASE_CSS_TEMPLATE || !BASE_JS_TEMPLATE) { console.warn("Code generation skipped: Textareas or base templates not ready."); return; }
+
+             let cssVarsString = "";
+             let configObjectString = "const config = {\n";
+             let finalPostContainerSelector = "";
+
+             const allControls = document.querySelectorAll('.master-controls [data-config-key], .master-controls [data-variable]');
+             allControls.forEach(input => {
+                  const configKey = input.dataset.configKey;
+                  const variable = input.dataset.variable;
+                  const unit = input.dataset.unit || '';
+                  let value = input.type === 'checkbox' ? input.checked : input.value;
+
+                  if (configKey) {
+                      let jsValue;
+                      if (configKey === 'postContainerSelector') { const selectValue = document.getElementById('select-postContainerSelector').value; finalPostContainerSelector = (selectValue === 'custom') ? (document.getElementById('input-customSelector').value.trim() || ".post-body") : selectValue; jsValue = formatJsConfigValue(finalPostContainerSelector, configKey); }
+                      else { jsValue = formatJsConfigValue(value, configKey); }
+                      configObjectString += `    ${configKey}: ${jsValue},\n`;
+                  }
+                  if (variable) { const cssValue = formatCssVariableValue(value, variable); cssVarsString += `  ${variable}: ${cssValue}${unit};\n`; }
+              });
+
+             configObjectString = configObjectString.replace(/,\n$/, '\n') + "  };";
+             const finalCssCode = BASE_CSS_TEMPLATE.replace( /\/\* --- Generated CSS Variables START --- \*\/[\s\S]*?\/\* --- Generated CSS Variables END --- \*\//, `/* --- Generated CSS Variables START --- */\n:root {\n${cssVarsString}}\n/* --- End Generated CSS Variables --- */` );
+             const finalJsCode = BASE_JS_TEMPLATE.replace( /const\s+config\s*=\s*\{[\s\S]*?\};/, configObjectString );
+
+             cssCodeArea.value = finalCssCode;
+             jsCodeArea.value = finalJsCode;
+        }
+
+
+         // --- Preview TOC Class (अपरिवर्तित) ---
+         class TocPreview {
+             constructor(previewAreaId, initialConfig) {
+                 this.previewArea = document.getElementById(previewAreaId);
+                 this.postContent = this.previewArea?.querySelector('#toc-preview-content');
+                 this.config = {};
+                 this.tocContainer = null; this.toc = null; this.toggleButton = null;
+
+                 if (!this.previewArea || !this.postContent) { console.error("TOC Preview Init Error: Area or Content missing."); return; }
+
+                 this.updateConfigObject(initialConfig);
+                 this.buildInitialStructure();
+                 this.setupEventListeners();
+                 this.checkVisibility();
+             }
+
+             updateConfigObject(newConfig) { this.config = { ...this.config, ...newConfig }; }
+
+             updateConfig(key, value) {
+                this.config[key] = value;
+                this.updateTocContentElements();
+                if (key === 'minHeadingsForToc' || key === 'headingsSelector') { this.checkVisibility(); }
+                 if(['showButtonBaseText', 'hideButtonBaseText', 'showIconClass', 'hideIconClass'].includes(key)) { this.updateButtonContent(this.toc?.classList.contains('visible')); }
+             }
+
+             buildInitialStructure() {
+                  const existing = this.previewArea.querySelector('#toc-container-preview');
+                  if(existing) existing.remove();
+                  this.tocContainer = document.createElement("div"); this.tocContainer.id = "toc-container-preview";
+                  this.toggleButton = document.createElement("button"); this.toggleButton.id = "toc-toggle-button-preview"; this.toggleButton.type = "button";
+                  this.toc = document.createElement("div"); this.toc.id = "toc-preview"; this.toc.className = "thin-scrollbar";
+                  const tocTitle = document.createElement("h2"); tocTitle.className = "toc-title-preview";
+                  const tocList = document.createElement("ul");
+                  this.toc.appendChild(tocTitle); this.toc.appendChild(tocList);
+                  this.tocContainer.appendChild(this.toggleButton); this.tocContainer.appendChild(this.toc);
+                  const firstHeading = this.postContent.querySelector(this.config.headingsSelector || 'h2, h3, h4');
+                  if (firstHeading) { this.postContent.insertBefore(this.tocContainer, firstHeading); } else { this.postContent.prepend(this.tocContainer); }
+                  this.updateTocContentElements();
+             }
+
+             rebuildTocList() {
+                 if (!this.toc) return false;
+                 const tocList = this.toc.querySelector("ul");
+                 const tocTitleEl = this.toc.querySelector('.toc-title-preview');
+                 if (!tocList || !tocTitleEl) return false;
+                 tocTitleEl.textContent = this.config.tocTitleText || "Table of Contents";
+                 tocList.innerHTML = '';
+                 const headings = Array.from(this.postContent.querySelectorAll(this.config.headingsSelector || 'h2, h3'));
+                 const validHeadings = headings.filter(h => h.textContent?.trim());
+                 const shouldShow = validHeadings.length >= (this.config.minHeadingsForToc || 2);
+                 if (!shouldShow) return false;
+
+                 validHeadings.forEach((heading) => {
+                     const listItem = document.createElement("li");
+                     const headingLevel = heading.tagName.toLowerCase();
+                     listItem.className = `toc-level-${headingLevel.replace('h','')}-preview`;
+                     const link = document.createElement("a"); link.href = "#_preview";
+                     if (this.config.useIcons) {
+                         let iconClass = "";
+                         if (headingLevel === 'h2' && this.config.h2IconClass) iconClass = this.config.h2IconClass;
+                         else if (headingLevel === 'h3' && this.config.h3IconClass) iconClass = this.config.h3IconClass;
+                         else if (headingLevel === 'h4' && this.config.h4IconClass) iconClass = this.config.h4IconClass;
+                         if (iconClass) { const iconElement = document.createElement("i"); iconClass.split(' ').forEach(cls => { if (cls) iconElement.classList.add(cls); }); iconElement.setAttribute("aria-hidden", "true"); link.appendChild(iconElement); }
+                     }
+                     link.appendChild(document.createTextNode((heading.textContent || '').trim()));
+                     listItem.appendChild(link); tocList.appendChild(listItem);
+                 });
+                  const colCountVal = getComputedStyle(this.previewArea).getPropertyValue('--toc-column-count').trim() || '2';
+                 tocList.style.columnCount = colCountVal;
+                 return true;
+             }
+
+             checkVisibility() {
+                 if (!this.tocContainer) return;
+                 const headings = Array.from(this.postContent.querySelectorAll(this.config.headingsSelector || 'h2, h3'));
+                 const validHeadings = headings.filter(h => h.textContent?.trim());
+                 const shouldShow = validHeadings.length >= (this.config.minHeadingsForToc || 2);
+                 this.tocContainer.style.display = shouldShow ? 'block' : 'none';
+             }
+
+             updateTocContentElements() {
+                 const listRebuilt = this.rebuildTocList();
+                 this.checkVisibility();
+                 if (listRebuilt || this.tocContainer.style.display !== 'none') { this.updateButtonContent(this.toc?.classList.contains('visible')); }
+             }
+
+             updateButtonContent(isExpanded) {
+                 if (!this.toggleButton) return;
+                 const text = isExpanded ? (this.config.hideButtonBaseText || "Hide") : (this.config.showButtonBaseText || "Show");
+                 const iconClass = isExpanded ? (this.config.hideIconClass || 'fa-solid fa-chevron-up') : (this.config.showIconClass || 'fa-solid fa-chevron-down');
+                 this.toggleButton.innerHTML = `${text} <i class="${iconClass}" aria-hidden="true" style="margin-left: 8px;"></i>`;
+             }
+
+             setupEventListeners() {
+                 if (!this.toggleButton || !this.toc) return;
+                 this.toggleButton.addEventListener('click', () => { const isVisible = this.toc.classList.toggle('visible'); this.tocContainer.classList.toggle('toc-is-shown', isVisible); this.updateButtonContent(isVisible); });
+                 this.toc.addEventListener('click', e => { if (e.target.closest('a')) e.preventDefault(); });
+             }
+         }
+
+
+        // --- इनिशियलाइज़ेशन ---
+        function initializeCustomizer() {
+             // मौजूदा कोड अपरिवर्तित रहेगा
+             const previewArea = document.getElementById('live-preview-area');
+             const cssCodeArea = document.getElementById('cssCodeArea');
+             const jsCodeArea = document.getElementById('jsCodeArea');
+             slideContainer = document.querySelector('.master-controls .slider-container');
+             slideInfoElement = document.getElementById('current-slide-info');
+             nextBtn = document.getElementById('next-slide-btn');
+             prevBtn = document.getElementById('prev-slide-btn');
+             if (!previewArea || !cssCodeArea || !jsCodeArea || !slideContainer || !slideInfoElement || !nextBtn || !prevBtn) { console.error("TOC Customizer init failed: Required elements missing."); return; }
+             if (!BASE_CSS_TEMPLATE || !BASE_JS_TEMPLATE) { console.error("Base templates are missing! Cannot initialize customizer correctly."); return; }
+             slides = Array.from(slideContainer.querySelectorAll('.control-group.slider-slide'));
+             if(slides.length === 0) { console.error("TOC Customizer init failed: No slides found."); return; }
+             const initialConfig = {};
+             document.querySelectorAll('.master-controls [data-config-key]').forEach(input => { let value = input.type === 'checkbox' ? input.checked : input.value; const key = input.dataset.configKey; if (key === 'minHeadingsForToc' || key === 'highlightDuration') { value = parseInt(value, 10) || 0; } initialConfig[key] = value; });
+             const initialSelectorEl = document.getElementById('select-postContainerSelector');
+             if (initialSelectorEl) { initialConfig.postContainerSelector = initialSelectorEl.value === 'custom' ? (document.getElementById('input-customSelector').value.trim() || '.post-body') : initialSelectorEl.value; }
+             tocPreviewInstance = new TocPreview('live-preview-area', initialConfig);
+             if (!tocPreviewInstance) { console.error("Failed to initialize TOC Preview instance."); return; }
+             const allInputs = document.querySelectorAll('.master-controls input, .master-controls select, .master-controls textarea');
+             allInputs.forEach(input => { if (!input.dataset.previewTargetSelector) { updatePreview(input); } input.removeEventListener('input', handleInputChange); input.removeEventListener('change', handleInputChange); if (input.type === 'checkbox' || input.tagName === 'SELECT') { input.addEventListener('change', handleInputChange); } else { input.addEventListener('input', handleInputChange); } });
+             const selectorDropdown = document.getElementById('select-postContainerSelector'); const customSelectorWrapper = document.getElementById('custom-selector-wrapper'); const customSelectorInput = document.getElementById('input-customSelector');
+             if(selectorDropdown && customSelectorWrapper && customSelectorInput) { selectorDropdown.addEventListener('change', function() { const isCustom = this.value === 'custom'; customSelectorWrapper.style.display = isCustom ? 'flex' : 'none'; if (isCustom) { customSelectorInput.value = ''; customSelectorInput.focus(); } else { customSelectorInput.value = ''; } handleInputChange({ target: selectorDropdown }); }); customSelectorInput.addEventListener('input', () => { if (selectorDropdown.value === 'custom') { handleInputChange({ target: customSelectorInput }); } }); customSelectorWrapper.style.display = selectorDropdown.value === 'custom' ? 'flex' : 'none'; }
+             nextBtn.addEventListener('click', nextSlide); prevBtn.addEventListener('click', prevSlide);
+             updateFullCodeArea(); showSlide(0); tocPreviewInstance.checkVisibility();
+        }
+
+        // *** अपडेटेड इवेंट हैंडलर फ्लैश लॉजिक के साथ ***
+        function handleInputChange(event) {
+            // मौजूदा कोड अपरिवर्तित रहेगा
+             const input = event.target;
+             const variable = input.dataset.variable;
+             const configKey = input.dataset.configKey;
+             const previewTargetSelector = input.dataset.previewTargetSelector; // Check if it's a preview text input
+
+             // Update Preview (Styles or Text Content)
+             updatePreview(input);
+
+             // Update Code Boxes ONLY if it's NOT a preview text input
+             if (!previewTargetSelector) {
+                updateFullCodeArea(); // Regenerate CSS and JS Code Boxes
+             }
+
+             // --- नया फ्लैश लॉजिक ---
+             let targetTextareaId = null;
+             if (variable) { // Affects CSS
+                 targetTextareaId = 'cssCodeArea';
+             } else if (configKey || input.id === 'input-customSelector') { // Affects JS config or custom selector input
+                 targetTextareaId = 'jsCodeArea';
+             }
+             // Do not flash for preview text inputs
+             // if (previewTargetSelector) targetTextareaId = null; // Already handled by the outer if
+
+             if (targetTextareaId) {
+                 const targetTextarea = document.getElementById(targetTextareaId);
+                 if (targetTextarea) {
+                     clearTimeout(targetTextarea.flashTimeoutId); // Clear previous timeout
+                     targetTextarea.classList.add('textarea-flash'); // Add flash class
+                     targetTextarea.flashTimeoutId = setTimeout(() => {
+                         targetTextarea.classList.remove('textarea-flash'); // Remove flash class
+                     }, 250); // Flash duration
+                 }
+             }
+             // --- फ्लैश लॉजिक समाप्त ---
+        }
+
+        // --- Initialize on Load ---
+         document.addEventListener('DOMContentLoaded', () => {
+             const cssArea = document.getElementById('cssCodeArea');
+             const jsArea = document.getElementById('jsCodeArea');
+             if (cssArea && jsArea) {
+                 BASE_CSS_TEMPLATE = cssArea.value || `/* Fallback CSS */`;
+                 BASE_JS_TEMPLATE = jsArea.value || `// Fallback JS`;
+             } else {
+                 console.error("Could not find code textareas to capture base templates!");
+                 BASE_CSS_TEMPLATE = `/* Fallback CSS */`; BASE_JS_TEMPLATE = `// Fallback JS`;
+             }
+             initializeCustomizer();
+         });
+
+    //]]>
+    </script>
+</body>
+</html>
